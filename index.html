@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculette TF / TG — Agences ATTILA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --red:#E2001A;
+    --red-deep:#B00016;
+    --ink:#15171C;
+    --ink-2:#22252D;
+    --surface:#FFFFFF;
+    --paper:#EEF0F3;
+    --line:#DDE0E5;
+    --muted:#6B7079;
+    --green:#158C4E;
+    --amber:#C87A00;
+    --shadow:0 1px 2px rgba(20,23,28,.06),0 8px 24px rgba(20,23,28,.06);
+    --display:"Archivo",system-ui,sans-serif;
+    --body:"Inter",system-ui,-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    font-family:var(--body);
+    color:var(--ink);
+    background:var(--paper);
+    line-height:1.5;
+    font-feature-settings:"tnum" 1,"ss01" 1;
+    padding:0 0 56px;
+  }
+  .wrap{max-width:1060px;margin:0 auto;padding:0 20px}
+
+  /* Header */
+  header{background:var(--ink);color:#fff;position:relative;overflow:hidden}
+  .stripe{
+    height:8px;
+    background:repeating-linear-gradient(-45deg,var(--red) 0 22px,var(--ink) 22px 44px);
+  }
+  .head-inner{padding:30px 20px 34px;max-width:1060px;margin:0 auto}
+  .eyebrow{
+    font-family:var(--display);font-weight:700;letter-spacing:.16em;text-transform:uppercase;
+    font-size:12px;color:var(--red);margin-bottom:10px;
+  }
+  header h1{
+    font-family:var(--display);font-weight:800;font-size:clamp(28px,5vw,44px);
+    line-height:1.02;letter-spacing:-.01em;
+  }
+  header h1 span{color:var(--red)}
+  header p{color:#B9BDC6;max-width:60ch;margin-top:12px;font-size:15px}
+
+  /* Layout */
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:26px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+  .card-h{
+    display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line);
+  }
+  .card-h .idx{
+    font-family:var(--display);font-weight:800;font-size:13px;color:#fff;background:var(--red);
+    width:26px;height:26px;border-radius:7px;display:grid;place-items:center;flex:none;
+  }
+  .card-h h2{font-family:var(--display);font-weight:700;font-size:16px;letter-spacing:.01em}
+  .card-b{padding:20px}
+
+  /* Inputs */
+  .field{margin-bottom:18px}
+  .field:last-child{margin-bottom:0}
+  .field label{display:block;font-weight:600;font-size:13.5px;margin-bottom:7px}
+  .field .hint{color:var(--muted);font-size:12px;font-weight:400;margin-top:5px}
+  .num{
+    width:100%;font-family:var(--display);font-weight:700;font-size:22px;color:var(--ink);
+    border:1.5px solid var(--line);border-radius:10px;padding:11px 13px;background:#fff;
+    transition:border-color .12s ease,box-shadow .12s ease;
+  }
+  .num:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 3px rgba(226,0,26,.14)}
+
+  /* Slider */
+  .slider-row{display:flex;align-items:center;gap:16px}
+  .slider-row .num{width:96px;text-align:center}
+  input[type=range]{
+    -webkit-appearance:none;appearance:none;flex:1;height:6px;border-radius:6px;
+    background:linear-gradient(var(--red),var(--red)) no-repeat,var(--line);
+    background-size:var(--fill,50%) 100%;cursor:pointer;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:#fff;
+    border:2.5px solid var(--red);box-shadow:0 1px 4px rgba(0,0,0,.2);cursor:pointer;
+  }
+  input[type=range]::-moz-range-thumb{
+    width:20px;height:20px;border-radius:50%;background:#fff;border:2.5px solid var(--red);cursor:pointer;
+  }
+  input[type=range]:focus{outline:none}
+  input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(226,0,26,.2)}
+
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:420px){.split{grid-template-columns:1fr}}
+
+  /* Derivation strip */
+  .deriv{
+    margin-top:4px;background:var(--paper);border-radius:10px;padding:13px 15px;
+    font-size:13px;color:var(--muted);
+  }
+  .deriv b{color:var(--ink);font-family:var(--display)}
+  .deriv .eq{font-size:14px;margin-top:2px}
+  .deriv .total{
+    display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;
+    padding-top:10px;border-top:1px dashed var(--line);
+  }
+  .deriv .total span{font-weight:600;color:var(--ink)}
+  .deriv .total strong{font-family:var(--display);font-weight:800;font-size:20px;color:var(--ink)}
+
+  /* Results */
+  .kpi{padding:22px 20px;border-bottom:1px solid var(--line)}
+  .kpi:last-child{border-bottom:none}
+  .kpi-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+  .kpi-name{font-family:var(--display);font-weight:800;font-size:18px}
+  .kpi-name small{display:block;font-family:var(--body);font-weight:500;font-size:12px;color:var(--muted);letter-spacing:0}
+  .kpi-val{font-family:var(--display);font-weight:800;font-size:clamp(38px,8vw,56px);line-height:1;letter-spacing:-.02em}
+  .kpi-formula{font-size:12.5px;color:var(--muted);margin-top:10px}
+  .kpi-formula code{font-family:var(--display);font-weight:600;color:var(--ink);background:var(--paper);padding:1px 6px;border-radius:5px}
+
+  .badge{
+    display:inline-flex;align-items:center;gap:7px;margin-top:14px;
+    font-weight:600;font-size:13px;padding:6px 12px;border-radius:999px;
+  }
+  .badge::before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor}
+  .badge.good{color:var(--green);background:rgba(21,140,78,.1)}
+  .badge.warn{color:var(--amber);background:rgba(200,122,0,.1)}
+  .badge.bad{color:var(--red);background:rgba(226,0,26,.09)}
+  .badge.none{color:var(--muted);background:var(--paper)}
+
+  .aside{font-size:12.5px;color:var(--muted);margin-top:12px;padding-top:14px;border-top:1px solid var(--line)}
+  .aside b{color:var(--ink)}
+
+  /* Definitions */
+  .defs{margin-top:22px}
+  .defs .card-b{padding:0}
+  details{border-bottom:1px solid var(--line)}
+  details:last-child{border-bottom:none}
+  summary{
+    list-style:none;cursor:pointer;padding:16px 20px;font-family:var(--display);font-weight:700;
+    font-size:15px;display:flex;align-items:center;gap:12px;
+  }
+  summary::-webkit-details-marker{display:none}
+  summary .chev{margin-left:auto;color:var(--muted);transition:transform .18s ease}
+  details[open] summary .chev{transform:rotate(90deg)}
+  summary .tag{font-family:var(--body);font-weight:700;font-size:11px;color:#fff;background:var(--ink);padding:3px 8px;border-radius:6px;letter-spacing:.04em}
+  .def-body{padding:2px 20px 20px;font-size:14px;color:#3a3d44}
+  .def-body p{margin-bottom:10px}
+  .def-body p:last-child{margin-bottom:0}
+  .def-body .fx{font-family:var(--display);font-weight:700;color:var(--ink);background:var(--paper);padding:12px 15px;border-radius:10px;margin:6px 0 12px;font-size:15px}
+  .def-body ul{margin:0 0 4px 18px}
+  .def-body li{margin-bottom:6px}
+  .def-body strong{color:var(--ink)}
+
+  footer{max-width:1060px;margin:26px auto 0;padding:0 20px;color:var(--muted);font-size:12px}
+
+  @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="stripe"></div>
+  <div class="head-inner">
+    <div class="eyebrow">Sécurité réseau · QHSE ATTILA</div>
+    <h1>Calculette <span>TF / TG</span><br>par agence</h1>
+    <p>Taux de fréquence et taux de gravité des accidents du travail avec arrêt, sur une base équivalent temps plein à 39 h. Renseigne l'effectif et les AT, les taux se calculent en direct.</p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+
+    <!-- Paramètres -->
+    <section class="card">
+      <div class="card-h"><div class="idx">1</div><h2>Paramètres de l'agence</h2></div>
+      <div class="card-b">
+
+        <div class="field">
+          <label for="effRange">Effectif (ETP)</label>
+          <div class="slider-row">
+            <input type="range" id="effRange" min="1" max="30" step="1" value="12">
+            <input type="number" id="eff" class="num" min="1" max="30" step="1" value="12" inputmode="numeric">
+          </div>
+          <div class="hint">Jusqu'à 30 personnes, base équivalent temps plein.</div>
+        </div>
+
+        <div class="split">
+          <div class="field">
+            <label for="hebdo">Heures / semaine</label>
+            <input type="number" id="hebdo" class="num" min="1" max="60" step="0.5" value="39" inputmode="decimal">
+            <div class="hint">Base 39 h pour tous.</div>
+          </div>
+          <div class="field">
+            <label for="sem">Semaines travaillées / an</label>
+            <input type="number" id="sem" class="num" min="1" max="52" step="0.5" value="47" inputmode="decimal">
+            <div class="hint">52 − 5 sem. de CP = 47.</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="deriv">
+            <div class="eq">Heures travaillées = <b>effectif × h/sem × sem./an</b></div>
+            <div class="eq" id="derivLine">12 × 39 × 47</div>
+            <div class="total"><span>Total heures travaillées</span><strong id="hoursOut">21 996</strong></div>
+          </div>
+        </div>
+
+        <div class="split">
+          <div class="field">
+            <label for="at">AT avec arrêt</label>
+            <input type="number" id="at" class="num" min="0" step="1" value="1" inputmode="numeric">
+            <div class="hint">Accidents reconnus avec ≥ 1 jour d'arrêt.</div>
+          </div>
+          <div class="field">
+            <label for="jours">Jours d'arrêt cumulés</label>
+            <input type="number" id="jours" class="num" min="0" step="1" value="18" inputmode="numeric">
+            <div class="hint">Jours calendaires d'IT.</div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Objectifs à définir <span class="hint" style="display:inline">(cibles réseau, à ajuster)</span></label>
+          <div class="split">
+            <input type="number" id="objTf" class="num" min="0" step="0.5" value="25" inputmode="decimal" aria-label="Objectif TF1">
+            <input type="number" id="objTg" class="num" min="0" step="0.1" value="1.5" inputmode="decimal" aria-label="Objectif TG">
+          </div>
+          <div class="hint">Gauche : objectif TF1 — Droite : objectif TG. Réglés par toi, pas un benchmark sectoriel.</div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Résultats -->
+    <section class="card">
+      <div class="card-h"><div class="idx">2</div><h2>Indicateurs</h2></div>
+
+      <div class="kpi">
+        <div class="kpi-top">
+          <div class="kpi-name">TF1<small>Taux de fréquence · AT avec arrêt</small></div>
+          <div class="kpi-val" id="tfOut">45,5</div>
+        </div>
+        <div class="kpi-formula">Nombre d'AT avec arrêt <code>× 1 000 000</code> / heures travaillées</div>
+        <div class="badge good" id="tfBadge">Sous l'objectif</div>
+      </div>
+
+      <div class="kpi">
+        <div class="kpi-top">
+          <div class="kpi-name">TG<small>Taux de gravité · jours d'arrêt</small></div>
+          <div class="kpi-val" id="tgOut">0,82</div>
+        </div>
+        <div class="kpi-formula">Jours d'arrêt <code>× 1 000</code> / heures travaillées</div>
+        <div class="badge good" id="tgBadge">Sous l'objectif</div>
+        <div class="aside">Durée moyenne d'un arrêt : <b id="avgOut">18</b> jours · un TF/TG à 0 signifie aucun AT avec arrêt sur la période.</div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Définitions au goût Attila -->
+  <section class="card defs">
+    <div class="card-h"><div class="idx">i</div><h2>Les définitions, au goût ATTILA</h2></div>
+    <div class="card-b">
+
+      <details open>
+        <summary><span class="tag">TF1</span> Taux de fréquence <span class="chev">›</span></summary>
+        <div class="def-body">
+          <div class="fx">TF1 = (AT avec arrêt × 1 000 000) ÷ heures réellement travaillées</div>
+          <p>Nombre d'accidents du travail <strong>avec arrêt</strong> survenus par million d'heures travaillées. C'est l'indicateur de <strong>récurrence</strong> : combien de fois on se blesse.</p>
+          <p>Ce qui compte pour ATTILA :</p>
+          <ul>
+            <li>Un <strong>AT avec arrêt</strong> = accident reconnu ayant entraîné au moins un jour d'arrêt (hors le jour même de l'accident).</li>
+            <li>On ne compte <strong>ni</strong> les accidents de trajet, <strong>ni</strong> les soins sans arrêt (ceux-ci relèvent du TF2 / presqu'accidents).</li>
+            <li>Le million d'heures est une convention : il permet de comparer une agence de 8 personnes à une de 25.</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary><span class="tag">TG</span> Taux de gravité <span class="chev">›</span></summary>
+        <div class="def-body">
+          <div class="fx">TG = (jours d'arrêt × 1 000) ÷ heures réellement travaillées</div>
+          <p>Nombre de journées perdues pour mille heures travaillées. C'est l'indicateur de <strong>sévérité</strong> : quand ça arrive, à quel point c'est grave.</p>
+          <ul>
+            <li><strong>Jours d'arrêt</strong> = jours calendaires d'incapacité temporaire indemnisés, cumulés sur la période, y compris les prolongations.</li>
+            <li>Un même accident peut donc peser lourd sur le TG même s'il ne fait bouger le TF1 que d'une unité.</li>
+            <li>Lire TF1 et TG ensemble : beaucoup d'AT peu graves ≠ un seul AT très grave. Les deux appellent des actions différentes.</li>
+          </ul>
+        </div>
+      </details>
+
+      <details>
+        <summary><span class="tag">H</span> Heures travaillées &amp; base ETP <span class="chev">›</span></summary>
+        <div class="def-body">
+          <div class="fx">Heures = effectif ETP × heures/semaine × semaines travaillées/an</div>
+          <p>Le dénominateur doit refléter les heures <strong>réellement</strong> travaillées. Sur une base 39 h :</p>
+          <ul>
+            <li>1 ETP « année pleine » ≈ 39 × 47 = <strong>1 833 h</strong> (52 semaines moins 5 de congés payés).</li>
+            <li>Ajuste les <strong>semaines travaillées</strong> pour tenir compte des jours fériés, d'un exercice partiel ou d'un fort taux d'absence.</li>
+            <li>Si tu disposes du décompte exact d'heures issu de la paie, remonte le nombre de semaines pour retomber dessus.</li>
+          </ul>
+          <p style="color:var(--muted)">Les valeurs de référence par secteur (couverture / CTN B) ne sont pas intégrées ici : à sourcer sur les statistiques CNAM/CARSAT plutôt qu'estimées.</p>
+        </div>
+      </details>
+
+    </div>
+  </section>
+
+  <footer>Base ETP 39 h · calcul local, aucune donnée transmise. Outil interne QHSE — les objectifs affichés sont des cibles à paramétrer.</footer>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const eff=$('eff'), effRange=$('effRange'), hebdo=$('hebdo'), sem=$('sem'),
+        at=$('at'), jours=$('jours'), objTf=$('objTf'), objTg=$('objTg');
+
+  const nf = (v,d=0) => v.toLocaleString('fr-FR',{minimumFractionDigits:d,maximumFractionDigits:d});
+
+  function zone(val, obj){
+    if(!isFinite(val)) return ['none','—'];
+    if(obj<=0) return ['none','Objectif non défini'];
+    const r = val/obj;
+    if(r<=1) return ['good','Sous l\u2019objectif'];
+    if(r<=1.5) return ['warn','\u00c0 surveiller'];
+    return ['bad','Au-dessus de l\u2019objectif'];
+  }
+  function setBadge(el,cls,txt){ el.className='badge '+cls; el.textContent=txt; }
+
+  function clampEff(v){ v=Math.round(v||0); return Math.max(1,Math.min(30,v)); }
+
+  function compute(){
+    const e=clampEff(parseFloat(eff.value));
+    const h=parseFloat(hebdo.value)||0;
+    const s=parseFloat(sem.value)||0;
+    const nAt=Math.max(0,parseFloat(at.value)||0);
+    const nJ=Math.max(0,parseFloat(jours.value)||0);
+    const oTf=Math.max(0,parseFloat(objTf.value)||0);
+    const oTg=Math.max(0,parseFloat(objTg.value)||0);
+
+    const hours = e*h*s;
+
+    // slider fill
+    effRange.style.setProperty('--fill', ((e-1)/29*100)+'%');
+
+    $('derivLine').innerHTML = `${nf(e)} × ${nf(h,h%1?1:0)} × ${nf(s,s%1?1:0)}`;
+    $('hoursOut').textContent = hours>0 ? nf(hours) : '—';
+
+    const tf = hours>0 ? nAt*1e6/hours : NaN;
+    const tg = hours>0 ? nJ*1e3/hours : NaN;
+
+    $('tfOut').textContent = isFinite(tf) ? nf(tf,1) : '—';
+    $('tgOut').textContent = isFinite(tg) ? nf(tg,2) : '—';
+
+    const [tfC,tfT]=zone(tf,oTf); setBadge($('tfBadge'),tfC,tfT);
+    const [tgC,tgT]=zone(tg,oTg); setBadge($('tgBadge'),tgC,tgT);
+
+    $('avgOut').textContent = nAt>0 ? nf(nJ/nAt,1) : '0';
+  }
+
+  // sync slider <-> number
+  effRange.addEventListener('input',()=>{ eff.value=effRange.value; compute(); });
+  eff.addEventListener('input',()=>{ const v=clampEff(parseFloat(eff.value)); effRange.value=v; compute(); });
+  eff.addEventListener('blur',()=>{ eff.value=clampEff(parseFloat(eff.value)); compute(); });
+
+  [hebdo,sem,at,jours,objTf,objTg].forEach(el=>el.addEventListener('input',compute));
+
+  compute();
+})();
+</script>
+</body>
+</html>
