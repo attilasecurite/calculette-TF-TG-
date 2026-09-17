@@ -197,6 +197,13 @@
     color:#fff;background:var(--red);border:none;border-radius:12px;padding:16px;cursor:pointer;letter-spacing:.02em;
     box-shadow:0 4px 14px rgba(226,0,26,.28);transition:transform .1s,box-shadow .15s}
   .btn-print-big:active{transform:translateY(1px);box-shadow:0 2px 8px rgba(226,0,26,.28)}
+  .verdict{margin-top:18px;padding:15px 18px;background:var(--paper);border-radius:12px}
+  .v-row{display:flex;align-items:flex-start;gap:10px;font-size:14px;line-height:1.5;color:var(--ink)}
+  .v-row+.v-row{margin-top:9px}
+  .v-dot{width:11px;height:11px;border-radius:50%;background:var(--muted);flex:none;margin-top:5px}
+  .v-dot.ok{background:var(--green)}
+  .v-dot.mid{background:var(--amber)}
+  .v-dot.ko{background:var(--red)}
   .print-only{display:none}
   @media print{
     @page{size:A4 portrait;margin:14mm}
@@ -349,6 +356,11 @@
         </div>
       </div>
 
+      <div class="verdict">
+        <div class="v-row"><span class="v-dot" id="vFreqDot"></span><span id="vFreq">—</span></div>
+        <div class="v-row"><span class="v-dot" id="vGravDot"></span><span id="vGrav">—</span></div>
+      </div>
+
       <button type="button" class="btn-print-big no-print" id="btnPrint">⎙ Imprimer / enregistrer en PDF</button>
     </section>
 
@@ -456,7 +468,7 @@
   <footer>Base ETP 39 h · calcul local, aucune donnée transmise. Références branche = ordres de grandeur à vérifier sur les statistiques officielles avant diffusion.</footer>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script>
 (function(){
   const $ = id => document.getElementById(id);
@@ -497,6 +509,22 @@
     let c='agc';
     if(isFinite(val)&&brRef>0)c+=(val>brRef?' ko':' ok');  // rouge si > branche, vert sinon
     el.className=c;
+  }
+  // Conclusion auto par famille : ok (<=Attila) / mid (<=branche) / ko (>branche)
+  const VMSG={
+    freq:{ok:"L'agence présente une fréquence d'accidents maîtrisée : elle se situe sous la moyenne du réseau Attila et sous la branche couverture.",
+          mid:"L'agence présente une fréquence d'accidents correcte : sous la branche couverture, mais au-dessus de la moyenne du réseau Attila — il reste une marge de progrès.",
+          ko:"L'agence présente une fréquence d'accidents élevée : elle dépasse la branche couverture. Priorité : réduire le nombre d'accidents."},
+    grav:{ok:"L'agence présente une gravité maîtrisée : ses arrêts sont moins longs que ceux du réseau et de la branche.",
+          mid:"L'agence présente une gravité correcte : sous la branche, mais au-dessus de la moyenne du réseau — à surveiller.",
+          ko:"L'agence présente une gravité élevée : ses arrêts sont plus longs que ceux de la branche. Priorité : réduire la sévérité des accidents (chutes de hauteur…)."}
+  };
+  function setVerdict(txtId,dotId,fam,val,att,br){
+    const dot=$(dotId), el=$(txtId);
+    if(!isFinite(val)||!(br>0)){dot.className='v-dot';dot.dataset.level='';el.textContent='en attente de données.';return;}
+    const lvl=(att>0&&val<=att)?'ok':(val<=br?'mid':'ko');
+    dot.className='v-dot '+lvl; dot.dataset.level=lvl;
+    el.textContent=VMSG[fam][lvl];
   }
 
   function compute(){
@@ -540,6 +568,9 @@
     $('tgBr').textContent=isFinite(rTg)?nf(rTg,2):'—';
     cell('durAg',dur,dAtt,dBr,0);
     cell('tgAg',tg,tgAtt,rTg,2);
+
+    setVerdict('vFreq','vFreqDot','freq',iff,rAtt,rBrIf);
+    setVerdict('vGrav','vGravDot','grav',tg,tgAtt,rTg);
   }
 
   effRange.addEventListener('input',()=>{eff.value=effRange.value;compute();});
@@ -555,37 +586,102 @@
   }));
   [refAttila,refDureeAtt,refDureeBr].forEach(el=>el.addEventListener('input',compute));
 
+  function pdfVal(id){var e=$(id);return e?e.textContent:'\u2014';}
+  function pdfState(id){var e=$(id);if(!e)return'';return e.classList.contains('ko')?'ko':(e.classList.contains('ok')?'ok':'');}
+
   function makePdf(){
-    const src=document.getElementById('printArea');
-    const node=document.createElement('div');
-    node.style.cssText='position:fixed;left:0;top:0;z-index:2147483647;width:760px;padding:30px;background:#fff;color:#15171C;font-family:Inter,system-ui,sans-serif';
-    node.innerHTML=
-      '<div style="font-family:Archivo,sans-serif;font-weight:800;font-size:22px;color:#E2001A;letter-spacing:.05em">ATTILA</div>'+
-      '<div style="font-style:italic;color:#555;margin:2px 0 24px">R\u00e9pare et entretient vos toits \u2014 Bilan s\u00e9curit\u00e9</div>'+
-      '<div style="font-family:Archivo,sans-serif;font-size:18px;font-weight:700;margin:12px 0">Agence : <span style="color:#bbb">..........................................</span></div>'+
-      '<div style="font-family:Archivo,sans-serif;font-size:18px;font-weight:700;margin:12px 0 26px">Ann\u00e9e : <span style="color:#bbb">..........................................</span></div>';
-    src.querySelectorAll('.freq-table').forEach(function(t){
-      const w=document.createElement('div'); w.style.marginBottom='24px'; w.appendChild(t.cloneNode(true)); node.appendChild(w);
-    });
-    const leg=document.createElement('div');
-    leg.style.cssText='font-size:12px;color:#555;border-top:1px solid #ccc;padding-top:12px;line-height:1.5';
-    leg.innerHTML='<b>IF</b> accidents / 1 000 salari\u00e9s \u00b7 <b>TF</b> / 1 M d\'heures \u00b7 <b>TG</b> jours perdus / 1 000 h \u00b7 <b>Dur\u00e9e</b> jours par arr\u00eat. Cellule agence verte = sous la r\u00e9f\u00e9rence, rouge = au-dessus.';
-    node.appendChild(leg);
-    document.body.appendChild(node);
-    html2pdf().set({margin:12,filename:'bilan-securite-attila.pdf',image:{type:'jpeg',quality:.98},html2canvas:{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false,scrollX:0,scrollY:0,windowWidth:820},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}})
-      .from(node).save().then(function(){node.remove();}).catch(function(){node.remove();try{window.print();}catch(e){}});
+    var JS=(window.jspdf||{}).jsPDF; if(!JS){try{window.print();}catch(e){}return;}
+    var doc=new JS({unit:'mm',format:'a4',orientation:'portrait'});
+    var L=18, R=192, cAg=112, cAt=150, cBr=182, y=22;
+
+    // Bandeau marque
+    doc.setFont('helvetica','bold');doc.setFontSize(24);doc.setTextColor(226,0,26);
+    doc.text('ATTILA', L, y);
+    doc.setFont('helvetica','italic');doc.setFontSize(11);doc.setTextColor(90,90,90);
+    doc.text('Repare et entretient vos toits  -  Bilan securite', L, y+7);
+    y+=20;
+
+    // Agence / Annee (lignes a remplir)
+    doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(25,25,30);
+    doc.text('Agence :', L, y); doc.setDrawColor(170);doc.setLineWidth(0.3);doc.line(L+26,y+1,R,y+1);
+    y+=13;
+    doc.text('Annee :', L, y); doc.line(L+24,y+1,R,y+1);
+    y+=18;
+
+    function block(title, rows){
+      // bandeau titre + entetes colonnes
+      doc.setFillColor(244,244,247);doc.rect(L,y-5.5,R-L,8,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(120,120,125);
+      doc.text(title.toUpperCase(), L+2, y);
+      doc.setTextColor(226,0,26);doc.text('AGENCE', cAg, y, {align:'center'});
+      doc.setTextColor(120,120,125);
+      doc.text('ATTILA', cAt, y, {align:'center'});
+      doc.text('BRANCHE', cBr, y, {align:'center'});
+      y+=10;
+      rows.forEach(function(r){
+        doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(25,25,30);
+        doc.text(r.label, L+2, y);
+        doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(130,130,135);
+        doc.text(r.sub, L+2, y+4.5);
+        // agence (couleur selon resultat)
+        doc.setFont('helvetica','bold');doc.setFontSize(16);
+        if(r.state==='ko')doc.setTextColor(226,0,26);
+        else if(r.state==='ok')doc.setTextColor(21,140,78);
+        else doc.setTextColor(25,25,30);
+        doc.text(r.ag, cAg, y+1, {align:'center'});
+        // attila / branche
+        doc.setFontSize(14);doc.setTextColor(120,120,125);
+        doc.text(r.at, cAt, y+1, {align:'center'});
+        doc.text(r.br, cBr, y+1, {align:'center'});
+        y+=15;
+        doc.setDrawColor(228);doc.setLineWidth(0.2);doc.line(L,y-5,R,y-5);
+      });
+      y+=8;
+    }
+
+    block('Frequence', [
+      {label:'IF', sub:'pour 1 000 salaries', ag:pdfVal('ifAg'), at:pdfVal('ifAtt'), br:pdfVal('ifBr'), state:pdfState('ifAg')},
+      {label:'TF', sub:"pour 1 M d'heures", ag:pdfVal('tfAg'), at:pdfVal('tfAtt'), br:pdfVal('tfBr'), state:pdfState('tfAg')}
+    ]);
+    block('Gravite', [
+      {label:'Duree', sub:'jours par arret', ag:pdfVal('durAg'), at:pdfVal('durAtt'), br:pdfVal('durBr'), state:pdfState('durAg')},
+      {label:'TG', sub:'pour 1 000 heures', ag:pdfVal('tgAg'), at:pdfVal('tgAtt'), br:pdfVal('tgBr'), state:pdfState('tgAg')}
+    ]);
+
+    // Conclusion
+    var AF={ok:"L'agence presente une frequence d'accidents maitrisee : sous la moyenne du reseau Attila et sous la branche couverture.",mid:"L'agence presente une frequence d'accidents correcte : sous la branche couverture, mais au-dessus de la moyenne du reseau Attila.",ko:"L'agence presente une frequence d'accidents elevee : elle depasse la branche couverture. Priorite : reduire le nombre d'accidents."};
+    var AG={ok:"L'agence presente une gravite maitrisee : ses arrets sont moins longs que ceux du reseau et de la branche.",mid:"L'agence presente une gravite correcte : sous la branche, mais au-dessus de la moyenne du reseau.",ko:"L'agence presente une gravite elevee : ses arrets sont plus longs que ceux de la branche. Priorite : reduire la severite des accidents."};
+    function lvlColor(l){if(l==='ok')return[21,140,78];if(l==='ko')return[226,0,26];if(l==='mid')return[200,122,0];return[90,90,95];}
+    var lf=($('vFreqDot').dataset.level||''), lg=($('vGravDot').dataset.level||'');
+    y+=3; doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(25,25,30);
+    doc.text('Conclusion', L, y); y+=8;
+    doc.setFont('helvetica','normal');doc.setFontSize(10);
+    var cf=lvlColor(lf); doc.setTextColor(cf[0],cf[1],cf[2]);
+    var lnf=doc.splitTextToSize(lf?AF[lf]:'En attente de donnees.', R-L);
+    doc.text(lnf, L, y); y+=lnf.length*5.2+4;
+    var cg=lvlColor(lg); doc.setTextColor(cg[0],cg[1],cg[2]);
+    var lng=doc.splitTextToSize(lg?AG[lg]:'En attente de donnees.', R-L);
+    doc.text(lng, L, y); y+=lng.length*5.2+6;
+
+    doc.setDrawColor(200);doc.setLineWidth(0.2);doc.line(L,y,R,y);y+=5;
+    doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(95,95,100);
+    var leg='IF = accidents pour 1 000 salaries  -  TF = pour 1 M d heures  -  TG = jours perdus pour 1 000 h  -  Duree = jours par arret.  Cellule agence verte = sous la reference, rouge = au-dessus.';
+    doc.text(doc.splitTextToSize(leg, R-L), L, y);
+
+    doc.save('bilan-securite-attila.pdf');
   }
+
   $('btnPrint').addEventListener('click',function(){
-    const b=$('btnPrint'), t=b.textContent;
-    if(typeof html2pdf==='undefined'){
-      b.textContent='PDF indisponible — ouvre la page dans Safari';
+    var b=$('btnPrint'), t=b.textContent;
+    if(!(window.jspdf&&window.jspdf.jsPDF)){
+      b.textContent='PDF indisponible \u2014 ouvre la page dans Safari';
       setTimeout(function(){b.textContent=t;},3500);
       try{window.print();}catch(e){}
       return;
     }
-    b.textContent='Génération du PDF…';
-    setTimeout(function(){ try{makePdf();}catch(e){try{window.print();}catch(e2){}} },30);
-    setTimeout(function(){b.textContent=t;},4500);
+    b.textContent='G\u00e9n\u00e9ration du PDF\u2026';
+    setTimeout(function(){ try{makePdf();}catch(e){try{window.print();}catch(e2){}} },20);
+    setTimeout(function(){b.textContent=t;},2500);
   });
 
   preset.value='couv';applyPreset('couv',true);
